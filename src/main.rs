@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use std::process::{Command, Stdio};
 use serde_json::json;
-use std::fs::{File, remove_file};
+use std::fs::{File, remove_file, remove_dir_all};
 use std::io::{Write, copy};
 use std::path::PathBuf;
 use reqwest;
@@ -30,6 +30,13 @@ enum Commands {
         #[arg(long)]
         version: Option<String>,
     },
+    Uninstall {
+        /// Version to uninstall. Can be a full version like 8.0.406 or a major version like 8
+        version: Option<String>,
+        /// Remove all installed SDK versions managed by dotnet
+        #[arg(long)]
+        all: bool,
+    },
 }
 
 fn get_home_dir() -> Option<PathBuf> {
@@ -46,6 +53,27 @@ fn is_dotnet_installed() -> bool {
         .output()
         .map(|output| output.status.success())
         .unwrap_or(false)
+}
+
+fn list_installed_sdks() -> Result<Vec<(String, PathBuf)>, Box<dyn std::error::Error>> {
+    let output = Command::new("dotnet")
+        .args(["--list-sdks"])
+        .output()?;
+    if !output.status.success() {
+        return Err("Failed to list SDKs".into());
+    }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut sdks = Vec::new();
+    for line in stdout.lines() {
+        if let Some((ver_part, path_part)) = line.split_once('[') {
+            let version = ver_part.trim().to_string();
+            let base = path_part.trim_end_matches(']').trim();
+            let mut pb = PathBuf::from(base);
+            pb.push(&version);
+            sdks.push((version, pb));
+        }
+    }
+    Ok(sdks)
 }
 
 async fn download_install_script() -> Result<String, Box<dyn std::error::Error>> {
@@ -156,6 +184,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("dotnet is not installed. Installing now...");
                 install_dotnet(*lts, version.clone()).await?;
                 println!("dotnet installation completed.");
+            }
+        }
+        Commands::Uninstall { version, all } => {
+            let sdks = list_installed_sdks()?;
+            let targets: Vec<(String, PathBuf)> = if *all {
+                sdks
+            } else if let Some(v) = version {
+                if v.contains('.') {
+                    sdks.into_iter().filter(|(ver, _)| ver == v).collect()
+                } else {
+                    let prefix = format!("{}.", v);
+                    sdks.into_iter().filter(|(ver, _)| ver.starts_with(&prefix)).collect()
+                }
+            } else {
+                eprintln!("Please provide a version or --all to uninstall.");
+                Vec::new()
+            };
+
+            if targets.is_empty() {
+                println!("No matching SDK versions found.");
+            } else {
+                for (ver, path) in targets {
+                    if path.exists() {
+                        match remove_dir_all(&path) {
+                            Ok(_) => println!("Removed {}", ver),
+                            Err(e) => eprintln!("Failed to remove {}: {}", ver, e),
+                        }
+                    } else {
+                        println!("Directory for {} not found", ver);
+                    }
+                }
             }
         }
     }
