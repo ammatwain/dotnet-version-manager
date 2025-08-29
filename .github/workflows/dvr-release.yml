@@ -21,17 +21,16 @@ jobs:
           - os: windows-latest
             artifact_name: dver.exe
             asset_name: dver-windows-amd64.exe
+          - os: macos-latest
+            artifact_name: dver
+            asset_name: dver-macos-amd64
 
     steps:
-    - uses: actions/checkout@v2
-    
+    - uses: actions/checkout@v4
+
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
-    
+      run: rustup update stable && rustup default stable
+
     - name: Build
       run: cargo build --release --verbose
     
@@ -41,7 +40,7 @@ jobs:
         mv target/release/${{ matrix.artifact_name }} ${{ matrix.asset_name }}
     
     - name: Upload artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.asset_name }}
         path: ${{ matrix.asset_name }}
@@ -54,49 +53,31 @@ jobs:
       contents: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Get version from Cargo.toml
         id: get_version
         run: |
-          version=$(grep '^version =' Cargo.toml | sed 's/.*= *"//' | sed 's/".*//')
+          version=$(grep '^version' Cargo.toml | sed 's/.*= *//' | sed 's/"//g')
           echo "VERSION=$version" >> $GITHUB_ENV
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
 
       - name: Display structure of downloaded files
         run: ls -R artifacts
 
-      - name: Prepare assets for upload
-        run: |
-          mkdir release_assets
-          find artifacts -type f -exec cp {} release_assets/ \;
-          ls -R release_assets
-
       - name: Create source code archive
-        run: git archive --format=zip HEAD -o source-code.zip
+        run: |
+          git archive --format=zip --output=source-code.zip HEAD
 
-      - name: Create Release
+      - name: Create Release and Upload Assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          release_notes="dver-v${{ env.VERSION }}"
           gh release create v${{ env.VERSION }} \
-            --title "dver-v${{ env.VERSION }}" \
-            --notes "$release_notes" \
-            --generate-notes
-
-          # Upload executables
-          for asset in release_assets/*; do
-            if [ -f "$asset" ]; then
-              echo "Uploading $asset"
-              gh release upload v${{ env.VERSION }} "$asset" --clobber
-            fi
-          done
-
-          # Upload source code
-          echo "Uploading source code"
-          gh release upload v${{ env.VERSION }} source-code.zip --clobber
+            --title "v${{ env.VERSION }}" \
+            --generate-notes \
+            artifacts/*/* source-code.zip
