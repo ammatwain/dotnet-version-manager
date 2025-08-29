@@ -1,53 +1,105 @@
 # .NET Version Manager (dver)
 
-## Overview
-
-`dver` is a command-line tool designed to simplify the process of managing multiple .NET SDK versions on your system. Inspired by popular version managers like nvm (Node Version Manager) and sdkman, this tool provides an easy and efficient way to switch between different .NET SDK versions, install new versions, and maintain consistent development environments across projects.
-
-By providing an easy-to-use interface for managing .NET SDK versions, this tool aims to streamline the development process and reduce version-related headaches. Whether you're working on multiple projects with different .NET version
+`dver` is a command-line tool to simplify managing multiple .NET SDK versions on your system. Inspired by `nvm` and `sdkman`, it provides an easy way to install, uninstall, and switch between .NET SDK versions.
 
 ## Features
 
-- `current`: Quickly check the currently active .NET SDK version.
-- `list`: View all installed .NET SDK versions on your system.
-- `use` : Easily switch to a different .NET SDK version for your project.
-- `install` : Automatically download and install the lts version or install a new .NET SDK versions
+- **`current`**: Check the currently active .NET SDK version.
+- **`list`**: View all installed .NET SDK versions.
+- **`use`**: Switch to a different .NET SDK version for your project by creating a `global.json` file.
+- **`install`**: Install new .NET SDK versions, including LTS, specific versions, or versions from a specific channel.
+- **`uninstall`**: Remove specific .NET SDK versions.
+- **`doctor`**: Check your system for common configuration issues.
 
 ## Why It Matters
-In the fast-paced world of .NET development, different projects often require different SDK versions. This tool addresses several key challenges:
 
-1. Consistency: Ensure all team members are using the same .NET SDK version, reducing "works on my machine" issues.
-2. Flexibility: Quickly switch between .NET versions for different projects without manual intervention.
-3. Ease of Setup: Simplify the process of setting up new development environments or onboarding new team members.
-4. Version Control: Easily specify and control the exact .NET SDK version for each project, improving reproducibility and reliability.
+In .NET development, different projects often require different SDK versions. `dver` helps you:
+
+1.  **Ensure Consistency**: Keep your team on the same .NET SDK version.
+2.  **Switch with Ease**: Quickly switch between .NET versions for different projects.
+3.  **Simplify Setup**: Easily set up new development environments.
+4.  **Control Versions**: Specify and control the exact .NET SDK version for each project.
+
+## Installation
+
+You can download the latest release for your operating system from the [Releases](https://github.com/stescobedo92/dotnet-version-manager/releases) page.
+
+## Getting Started
+
+After installing `dver`, it's recommended to run the `doctor` command to ensure your environment is set up correctly.
+
+```bash
+dver doctor
+```
+
+The `doctor` command will check if the .NET SDK installation directory is in your `PATH` and provide instructions on how to add it if it's missing. This is crucial for the `dotnet` command to find the SDKs installed by `dver`.
 
 ## Usage
 
-```bash
-./dver current  # Display current .NET SDK version
+### `install`
 
-Current dotnet version: 6.0.132
-```
-```bash
-./dver list  # List all installed .NET SDK versions
+Install a specific .NET SDK version.
 
-6.0.132
-8.0.105
+```bash
+dver install --version 8.0.406
 ```
 
-```bash
-./dver use 6.0.132  # Switch to .NET SDK version
+Install the latest Long-Term Support (LTS) version.
 
-SDK version set to 6.0.132
+```bash
+dver install --lts
 ```
 
-```bash
-./dver install --lts  # Install LTS version if not present
+By default, `dver` installs SDKs to the standard user-level location (`~/.dotnet` on Linux/macOS, `%LOCALAPPDATA%\Microsoft\dotnet` on Windows).
 
-dotnet is already installed on your system.
-Current version: 6.0.132
+### `list`
+
+List all installed .NET SDK versions.
+
+```bash
+dver list
 ```
 
+### `use`
+
+Set the .NET SDK version for the current directory by creating a `global.json` file.
+
 ```bash
-./dver install --version  7.0.100  # (Although you can use this command, it is still a work in progress so it is in the experimental phase.)
+dver use 8.0.406
+```
+
+### `uninstall`
+
+Uninstall a specific .NET SDK version.
+
+```bash
+dver uninstall --version 8.0.406
+```
+
+Uninstall all SDKs of a major version (e.g., all .NET 8 versions).
+
+```bash
+dver uninstall --version 8
+```
+
+Uninstall all installed .NET SDKs.
+
+```bash
+dver uninstall --all
+```
+
+### `current`
+
+Display the currently active .NET SDK version.
+
+```bash
+dver current
+```
+
+### `doctor`
+
+Run checks to diagnose common issues with your environment.
+
+```bash
+dver doctor
 ```
