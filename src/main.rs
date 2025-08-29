@@ -28,6 +28,9 @@ enum Commands {
         /// Specific version to install
         #[arg(long)]
         version: Option<String>,
+        /// The path to install the SDK to
+        #[arg(long)]
+        install_path: Option<String>,
     },
     Uninstall {
         /// Version to uninstall. Can be a full version like 8.0.406 or a major version like 8
@@ -125,7 +128,7 @@ async fn download_install_script() -> Result<PathBuf, Box<dyn std::error::Error>
     Ok(file_path)
 }
 
-async fn install_dotnet(lts: bool, version: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+async fn install_dotnet(lts: bool, version: Option<String>, install_path: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
     let script_path = download_install_script().await?;
 
     let mut command = if cfg!(windows) {
@@ -144,6 +147,10 @@ async fn install_dotnet(lts: bool, version: Option<String>) -> Result<(), Box<dy
         command.arg("-Channel").arg("LTS");
     } else if let Some(v) = version {
         command.arg("-Version").arg(v);
+    }
+
+    if let Some(path) = install_path {
+        command.arg("-InstallDir").arg(path);
     }
 
     let output = command.output()?;
@@ -247,7 +254,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             serde_json::to_writer_pretty(file, &json_data)?;
             println!("SDK version set to {} in {:?}", version, file_path);
         }
-        Commands::Install { lts, version } => {
+        Commands::Install { lts, version, install_path } => {
             if is_dotnet_installed() {
                 println!("dotnet is already installed on your system.");
                 let output = Command::new("dotnet")
@@ -257,7 +264,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("Current version: {}", version.trim());
             } else {
                 println!("dotnet is not installed. Installing now...");
-                if let Err(e) = install_dotnet(*lts, version.clone()).await {
+                if let Err(e) = install_dotnet(*lts, version.clone(), install_path.clone()).await {
                     eprintln!("Installation failed: {}", e);
                     return Err(e);
                 }
