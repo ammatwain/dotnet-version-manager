@@ -13,9 +13,16 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 clap = { version = "4.4", features = ["derive"] }
+
+# reqwest per HTTP + JSON
 reqwest = { version = "0.11", features = ["json"] }
+
+# JSON
+serde = { version = "1.0", features = ["derive"] }   # 👈 AGGIUNGI QUESTA
 serde_json = "1.0"
-tokio = { version = "1.0", features = ["full"] }
+
+# Tokio runtime async
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 
 [profile.release]
 lto = true
