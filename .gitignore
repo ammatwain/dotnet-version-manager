@@ -1,2 +1,33 @@
-target/
+# Compiled output
+/target/
 
+# Rust/Cargo specific
+**/*.rs.bk
+Cargo.lock
+
+# Backup files
+*.bak
+*.tmp
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor specific
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+*.log
+
+# Test artifacts
+*.prof
+*.gcda
+*.gcno
+
+# Misc
+.env
